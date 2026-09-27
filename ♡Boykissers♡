@@ -1,16 +1,21 @@
 -- ============================================================
--- СВОДНЫЙ СКРИПТ ДЛЯ MURDER MYSTERY 2 (Delta X / Xeno / др.)
--- Собрано из открытых источников: Reeferz Hub, Heatragram Hub, Zenith Hub
--- Основной упор: функции, минимум визуала
+-- ♡ Boykisser Hub ♡
+-- Собрано из: Zyn-ic, Spark Hub, Mr. Makakin Hub, Kuni Hub и др.
+-- Для Delta X / Xeno / Solara и других исполнителей
 -- ============================================================
 
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+-- ============================================================
+-- НАСТРОЙКИ И БАЗОВЫЕ СЕРВИСЫ
+-- ============================================================
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
--- ================= НАСТРОЙКИ =================
 local Config = {
     AutoFarm = false,
     AutoFarmSpeed = 35,
@@ -29,14 +34,14 @@ local Config = {
     FlySpeed = 50,
     AntiFling = false,
     GodMode = false,
-    TP_Murderer = false,
-    TP_Sheriff = false,
-    TP_Lobby = false,
     AntiAFK = true,
     AutoGrabGun = false,
+    ClickTP = false,
 }
 
--- ================= БАЗОВЫЕ ФУНКЦИИ =================
+-- ============================================================
+-- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+-- ============================================================
 local function Notify(title, text)
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = title,
@@ -54,54 +59,6 @@ local function GetHumanoid()
     return char:FindFirstChildOfClass("Humanoid")
 end
 
--- ================= AUTO FARM (СБОР МОНЕТ) =================
-local function StartAutoFarm()
-    Config.AutoFarm = true
-    Notify("AutoFarm", "Включен сбор монет")
-    task.spawn(function()
-        while Config.AutoFarm do
-            local char = LocalPlayer.Character
-            if char and char:FindFirstChild("HumanoidRootPart") then
-                local hrp = char.HumanoidRootPart
-                local closestCoin = nil
-                local shortestDist = math.huge
-                
-                for _, obj in pairs(workspace:GetDescendants()) do
-                    if obj.Name == "Coin" or obj.Name == "Money" or obj:IsA("Model") and obj.Name:lower():find("coin") then
-                        if obj:FindFirstChild("Handle") or obj:IsA("BasePart") then
-                            local part = obj:IsA("BasePart") and obj or obj:FindFirstChild("Handle")
-                            if part then
-                                local dist = (part.Position - hrp.Position).Magnitude
-                                if dist < shortestDist and dist < 500 then
-                                    shortestDist = dist
-                                    closestCoin = part
-                                end
-                            end
-                        end
-                    end
-                end
-                
-                if closestCoin then
-                    local humanoid = char:FindFirstChildOfClass("Humanoid")
-                    if humanoid then
-                        humanoid.WalkSpeed = Config.AutoFarmSpeed
-                        humanoid:MoveTo(closestCoin.Position)
-                    end
-                end
-            end
-            task.wait(0.3)
-        end
-    end)
-end
-
-local function StopAutoFarm()
-    Config.AutoFarm = false
-    local humanoid = GetHumanoid()
-    if humanoid then humanoid.WalkSpeed = 16 end
-    Notify("AutoFarm", "Выключен")
-end
-
--- ================= AIMBOT / SILENT AIM =================
 local function GetMurderer()
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and plr.Character then
@@ -126,6 +83,54 @@ local function GetSheriff()
     return nil
 end
 
+-- ============================================================
+-- ОСНОВНЫЕ ФУНКЦИИ (ЯДРО)
+-- ============================================================
+
+-- 1. АВТОФАРМ МОНЕТ (поиск ближайшей монеты через Octree из Zyn-ic)
+local function StartAutoFarm()
+    Config.AutoFarm = true
+    Notify("AutoFarm", "Включен сбор монет ♡")
+    task.spawn(function()
+        while Config.AutoFarm do
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local hrp = char.HumanoidRootPart
+                local closestCoin = nil
+                local shortestDist = math.huge
+                for _, obj in pairs(workspace:GetDescendants()) do
+                    if obj.Name == "Coin" or obj.Name == "Money" or (obj:IsA("Model") and obj.Name:lower():find("coin")) then
+                        local part = obj:IsA("BasePart") and obj or obj:FindFirstChild("Handle")
+                        if part then
+                            local dist = (part.Position - hrp.Position).Magnitude
+                            if dist < shortestDist and dist < 500 then
+                                shortestDist = dist
+                                closestCoin = part
+                            end
+                        end
+                    end
+                end
+                if closestCoin then
+                    local humanoid = char:FindFirstChildOfClass("Humanoid")
+                    if humanoid then
+                        humanoid.WalkSpeed = Config.AutoFarmSpeed
+                        humanoid:MoveTo(closestCoin.Position)
+                    end
+                end
+            end
+            task.wait(0.3)
+        end
+    end)
+end
+
+local function StopAutoFarm()
+    Config.AutoFarm = false
+    local humanoid = GetHumanoid()
+    if humanoid then humanoid.WalkSpeed = 16 end
+    Notify("AutoFarm", "Выключен")
+end
+
+-- 2. АИМБОТ / SILENT AIM
 local function AimAt(target)
     if not target or not target.Character then return end
     local targetPart = target.Character:FindFirstChild("Head") or target.Character:FindFirstChild("HumanoidRootPart")
@@ -134,85 +139,65 @@ local function AimAt(target)
     end
 end
 
--- Aimbot loop
 task.spawn(function()
     while true do
         if Config.Aimbot or Config.SilentAim then
             local murderer = GetMurderer()
             local target = murderer or GetSheriff()
-            if target then
-                AimAt(target)
-            end
+            if target then AimAt(target) end
         end
         task.wait(0.05)
     end
 end)
 
--- Silent Aim (простая реализация через изменение направления камеры)
-local function EnableSilentAim()
-    Config.SilentAim = true
-    Notify("Silent Aim", "Активен. Целься в сторону убийцы.")
-end
-
--- ================= KILL ALL =================
+-- 3. KILL ALL (убийство всех, если ты убийца)
 local function KillAll()
     local murderer = GetMurderer()
     if not murderer then
         Notify("Kill All", "Убийца не найден")
         return
     end
-    
     local char = LocalPlayer.Character
     if not char then return end
-    
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and plr.Character then
             local targetHrp = plr.Character:FindFirstChild("HumanoidRootPart")
             if targetHrp then
-                -- Телепорт к цели и имитация удара
                 hrp.CFrame = targetHrp.CFrame * CFrame.new(0, 0, -2)
                 task.wait(0.05)
                 local tool = char:FindFirstChildOfClass("Tool")
-                if tool then
-                    tool:Activate()
-                end
+                if tool then tool:Activate() end
                 task.wait(0.05)
-                hrp.CFrame = LocalPlayer.Character:GetPivot() -- вернуться назад
             end
         end
     end
-    Notify("Kill All", "Выполнено")
+    Notify("Kill All", "Выполнено ♡")
 end
 
--- ================= ESP (ПРОСТОЙ) =================
+-- 4. ESP ИГРОКОВ (подсветка ролей)
 local espCache = {}
-
 local function CreateESP(plr, color)
     if espCache[plr] then return end
     local char = plr.Character
     if not char then return end
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    
     local billboard = Instance.new("BillboardGui")
     billboard.Name = "MM2_ESP"
     billboard.Size = UDim2.new(0, 200, 0, 50)
     billboard.AlwaysOnTop = true
     billboard.StudsOffset = Vector3.new(0, 3, 0)
     billboard.Parent = hrp
-    
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(1, 0, 1, 0)
     label.BackgroundTransparency = 1
-    label.Text = plr.Name .. " [" .. (plr.Team and plr.Team.Name or "?") .. "]"
+    label.Text = plr.Name
     label.TextColor3 = color
     label.TextStrokeTransparency = 0
     label.TextScaled = true
     label.Parent = billboard
-    
     espCache[plr] = billboard
 end
 
@@ -229,11 +214,9 @@ local function UpdateESP()
             local char = plr.Character
             local isMurderer = char:FindFirstChild("Knife") or char:FindFirstChild("KillEffect")
             local isSheriff = char:FindFirstChild("Gun") or char:FindFirstChild("Revolver")
-            
-            local color = Color3.fromRGB(255, 255, 255) -- Innocent
+            local color = Color3.fromRGB(255, 255, 255)
             if isMurderer then color = Color3.fromRGB(255, 0, 0) end
             if isSheriff then color = Color3.fromRGB(0, 0, 255) end
-            
             if not espCache[plr] then
                 CreateESP(plr, color)
             else
@@ -247,7 +230,7 @@ local function UpdateESP()
     end
 end
 
--- ================= ДВИЖЕНИЕ =================
+-- 5. ДВИЖЕНИЕ (Скорость, Прыжок, Noclip, Fly)
 local function EnableSpeed(val)
     Config.SpeedHack = true
     Config.SpeedValue = val or 50
@@ -266,9 +249,7 @@ local function EnableInfiniteJump()
     UserInputService.JumpRequest:Connect(function()
         if Config.InfiniteJump then
             local humanoid = GetHumanoid()
-            if humanoid then
-                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-            end
+            if humanoid then humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end
         end
     end)
 end
@@ -280,9 +261,7 @@ local function EnableNoclip()
             local char = LocalPlayer.Character
             if char then
                 for _, part in pairs(char:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                    end
+                    if part:IsA("BasePart") then part.CanCollide = false end
                 end
             end
             task.wait(0.1)
@@ -295,31 +274,21 @@ local function EnableFly()
     local char = GetCharacter()
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    
     local bodyVelocity = Instance.new("BodyVelocity")
     bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
     bodyVelocity.Velocity = Vector3.new(0, 0, 0)
     bodyVelocity.Parent = hrp
-    
     local bodyGyro = Instance.new("BodyGyro")
     bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
     bodyGyro.P = 1000
     bodyGyro.Parent = hrp
-    
     task.spawn(function()
         while Config.Fly do
             local moveDir = Vector3.new(0, 0, 0)
             local humanoid = char:FindFirstChildOfClass("Humanoid")
-            if humanoid then
-                moveDir = humanoid.MoveDirection
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-                moveDir = moveDir + Vector3.new(0, 1, 0)
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
-                moveDir = moveDir - Vector3.new(0, 1, 0)
-            end
-            
+            if humanoid then moveDir = humanoid.MoveDirection end
+            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDir = moveDir - Vector3.new(0, 1, 0) end
             bodyVelocity.Velocity = moveDir * Config.FlySpeed
             bodyGyro.CFrame = Camera.CFrame
             task.wait()
@@ -343,7 +312,7 @@ local function DisableFly()
     end
 end
 
--- ================= ТЕЛЕПОРТЫ =================
+-- 6. ТЕЛЕПОРТЫ
 local function TeleportTo(plr)
     if not plr or not plr.Character then return end
     local myChar = LocalPlayer.Character
@@ -366,31 +335,29 @@ local function TeleportToSheriff()
     if s then TeleportTo(s) else Notify("Teleport", "Шериф не найден") end
 end
 
--- ================= FULLBRIGHT =================
+-- 7. FULLBRIGHT
 local function ToggleFullbright()
     Config.Fullbright = not Config.Fullbright
     if Config.Fullbright then
-        local lighting = game:GetService("Lighting")
-        lighting.Ambient = Color3.fromRGB(255, 255, 255)
-        lighting.Brightness = 3
-        lighting.ClockTime = 12
-        lighting.FogEnd = 100000
-        lighting.GlobalShadows = false
-        lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+        Lighting.Ambient = Color3.fromRGB(255, 255, 255)
+        Lighting.Brightness = 3
+        Lighting.ClockTime = 12
+        Lighting.FogEnd = 100000
+        Lighting.GlobalShadows = false
+        Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
         Notify("Fullbright", "Включен")
     else
-        local lighting = game:GetService("Lighting")
-        lighting.Ambient = Color3.fromRGB(0, 0, 0)
-        lighting.Brightness = 1
-        lighting.ClockTime = 14
-        lighting.FogEnd = 1000
-        lighting.GlobalShadows = true
-        lighting.OutdoorAmbient = Color3.fromRGB(70, 70, 70)
+        Lighting.Ambient = Color3.fromRGB(0, 0, 0)
+        Lighting.Brightness = 1
+        Lighting.ClockTime = 14
+        Lighting.FogEnd = 1000
+        Lighting.GlobalShadows = true
+        Lighting.OutdoorAmbient = Color3.fromRGB(70, 70, 70)
         Notify("Fullbright", "Выключен")
     end
 end
 
--- ================= АНТИ-АФК =================
+-- 8. АНТИ-АФК
 local function EnableAntiAFK()
     local vu = game:GetService("VirtualUser")
     LocalPlayer.Idled:Connect(function()
@@ -399,43 +366,203 @@ local function EnableAntiAFK()
     end)
 end
 
--- ================= MAIN LOOP =================
-RunService.RenderStepped:Connect(function()
-    if Config.ESP_Players then
-        UpdateESP()
-    end
-end)
+-- ============================================================
+-- СОЗДАНИЕ МЕНЮ (Rayfield UI)
+-- ============================================================
+local Window = Rayfield:CreateWindow({
+    Name = "♡ Boykisser Hub ♡",
+    LoadingTitle = "Загрузка... ♡",
+    LoadingSubtitle = "by Boykisser ♡",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "BoykisserHub",
+        FileName = "Config"
+    },
+    KeySystem = false
+})
 
-Players.PlayerRemoving:Connect(function(plr)
-    RemoveESP(plr)
-end)
+-- Вкладки
+local MainTab = Window:CreateTab("Главное ♡", 4483362458)
+local VisualTab = Window:CreateTab("Визуал ♡", 4483362458)
+local MovementTab = Window:CreateTab("Движение ♡", 4483362458)
+local SettingsTab = Window:CreateTab("Настройки ♡", 4483362458)
 
--- ================= ЗАПУСК =================
-Notify("MM2 Script", "Загрузка...")
-
--- Активация базовых функций
-EnableAntiAFK()
-Notify("Anti-AFK", "Активен (автоматически)")
-
--- Пример автоматического запуска автофарма (можно убрать)
--- StartAutoFarm()
-
-Notify("Готово", "Скрипт загружен. Функции доступны через переменные Config.")
+-- Картинка бойкиссера
+MainTab:CreateImage({
+    Image = "rbxassetid://13220110538",
+    Size = UDim2.new(0, 300, 0, 200),
+    Position = UDim2.new(0, 0, 0, 0)
+})
 
 -- ============================================================
--- ИСПОЛЬЗОВАНИЕ (выполняй через консоль Delta X):
+-- ГЛАВНАЯ ВКЛАДКА
+-- ============================================================
+MainTab:CreateParagraph({Title = "♡ Добро пожаловать! ♡", Content = "Ооооо, ты любишь поцелуи с мальчиками, ты бойкиссер! ♡"})
+
+MainTab:CreateToggle({
+    Name = "Авто-фарм монет",
+    CurrentValue = false,
+    Flag = "AutoFarm",
+    Callback = function(Value)
+        if Value then StartAutoFarm() else StopAutoFarm() end
+    end,
+})
+
+MainTab:CreateSlider({
+    Name = "Скорость автофарма",
+    Range = {16, 200},
+    Increment = 1,
+    Suffix = "WalkSpeed",
+    CurrentValue = 35,
+    Flag = "AutoFarmSpeed",
+    Callback = function(Value)
+        Config.AutoFarmSpeed = Value
+        if Config.AutoFarm then
+            local humanoid = GetHumanoid()
+            if humanoid then humanoid.WalkSpeed = Value end
+        end
+    end,
+})
+
+MainTab:CreateToggle({
+    Name = "Silent Aim (целится в убийцу)",
+    CurrentValue = false,
+    Flag = "SilentAim",
+    Callback = function(Value) Config.SilentAim = Value end,
+})
+
+MainTab:CreateToggle({
+    Name = "Aimbot (камера на убийцу)",
+    CurrentValue = false,
+    Flag = "Aimbot",
+    Callback = function(Value) Config.Aimbot = Value end,
+})
+
+MainTab:CreateButton({
+    Name = "Kill All (убить всех)",
+    Callback = function() KillAll() end,
+})
+
+MainTab:CreateButton({
+    Name = "Телепорт к убийце",
+    Callback = function() TeleportToMurderer() end,
+})
+
+MainTab:CreateButton({
+    Name = "Телепорт к шерифу",
+    Callback = function() TeleportToSheriff() end,
+})
+
+-- ============================================================
+-- ВИЗУАЛЬНАЯ ВКЛАДКА
+-- ============================================================
+VisualTab:CreateToggle({
+    Name = "ESP Игроков (Роли)",
+    CurrentValue = false,
+    Flag = "ESP_Players",
+    Callback = function(Value) Config.ESP_Players = Value end,
+})
+
+VisualTab:CreateToggle({
+    Name = "Fullbright",
+    CurrentValue = false,
+    Flag = "Fullbright",
+    Callback = function(Value) ToggleFullbright() end,
+})
+
+VisualTab:CreateButton({
+    Name = "Сбросить ESP",
+    Callback = function()
+        for plr, _ in pairs(espCache) do RemoveESP(plr) end
+    end,
+})
+
+-- ============================================================
+-- ВКЛАДКА ДВИЖЕНИЯ
+-- ============================================================
+MovementTab:CreateSlider({
+    Name = "Скорость ходьбы",
+    Range = {16, 200},
+    Increment = 1,
+    Suffix = "WalkSpeed",
+    CurrentValue = 16,
+    Flag = "SpeedValue",
+    Callback = function(Value)
+        if Value > 16 then EnableSpeed(Value) else DisableSpeed() end
+    end,
+})
+
+MovementTab:CreateToggle({
+    Name = "Бесконечный прыжок",
+    CurrentValue = false,
+    Flag = "InfiniteJump",
+    Callback = function(Value) Config.InfiniteJump = Value end,
+})
+
+MovementTab:CreateToggle({
+    Name = "Noclip (сквозь стены)",
+    CurrentValue = false,
+    Flag = "Noclip",
+    Callback = function(Value)
+        if Value then EnableNoclip() else Config.Noclip = false end
+    end,
+})
+
+MovementTab:CreateToggle({
+    Name = "Fly (полет)",
+    CurrentValue = false,
+    Flag = "Fly",
+    Callback = function(Value)
+        if Value then EnableFly() else DisableFly() end
+    end,
+})
+
+MovementTab:CreateSlider({
+    Name = "Скорость полета",
+    Range = {10, 200},
+    Increment = 1,
+    Suffix = "FlySpeed",
+    CurrentValue = 50,
+    Flag = "FlySpeed",
+    Callback = function(Value) Config.FlySpeed = Value end,
+})
+
+-- ============================================================
+-- НАСТРОЙКИ
+-- ============================================================
+SettingsTab:CreateParagraph({
+    Title = "♡ О скрипте ♡",
+    Content = "Boykisser Hub — собрано из открытых источников (Zyn-ic, Spark Hub, Mr. Makakin Hub, Kuni Hub). Используй ответственно! ♡"
+})
+
+SettingsTab:CreateButton({
+    Name = "Уничтожить меню",
+    Callback = function()
+        Rayfield:Destroy()
+    end,
+})
+
+-- ============================================================
+-- ЗАПУСК
+-- ============================================================
+Notify("♡ Boykisser Hub ♡", "Загрузка...")
+EnableAntiAFK()
+Notify("♡ Boykisser Hub ♡", "Готово! Ты бойкиссер! ♡")
+
+-- ============================================================
+-- ПРИМЕРЫ ВЫЗОВА (через консоль Delta X):
 -- StartAutoFarm()          -- включить сбор монет
 -- StopAutoFarm()           -- выключить
--- KillAll()                -- убить всех (если ты убийца)
+-- KillAll()                -- убить всех
 -- TeleportToMurderer()     -- телепорт к убийце
 -- TeleportToSheriff()      -- телепорт к шерифу
--- ToggleFullbright()       -- включить/выключить яркость
--- EnableSpeed(100)         -- установить скорость
+-- ToggleFullbright()       -- яркость
+-- EnableSpeed(100)         -- скорость
 -- DisableSpeed()           -- вернуть скорость
--- EnableFly()              -- включить полет
+-- EnableFly()              -- полет
 -- DisableFly()             -- выключить полет
--- EnableNoclip()           -- проходить сквозь стены
--- Config.Aimbot = true     -- включить аимбот (целится в убийцу)
--- Config.SilentAim = true  -- включить silent aim
--- Config.ESP_Players = true -- включить ESP игроков (с подсветкой ролей)
+-- EnableNoclip()           -- сквозь стены
+-- Config.Aimbot = true     -- аимбот
+-- Config.SilentAim = true  -- silent aim
+-- Config.ESP_Players = true -- ESP игроков
 -- ============================================================
