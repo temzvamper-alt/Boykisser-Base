@@ -1,20 +1,86 @@
 -- ============================================================
 -- ♡ Boykisser Hub ♡ — Pink Edition
--- Rayfield UI + розовая тема + картинки фембоев
+-- Иконки: icons.rest (Lucide для Roblox)
+-- Совместимость: Delta X, Xeno, Arceus, Solara, Wave, Arceus X Neo, Real
 -- ============================================================
 
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+-- ============================================================
+-- ПРОВЕРКА СОВМЕСТИМОСТИ ИСПОЛНИТЕЛЯ
+-- ============================================================
+local executorName = "Unknown"
+local ok, name = pcall(function()
+    return identifyexecutor and identifyexecutor() or (getexecutorname and getexecutorname()) or "Unknown"
+end)
+if ok and name then executorName = name end
+
+-- Список поддерживаемых исполнителей
+local supportedExecutors = {
+    "Delta", "Xeno", "Arceus", "Solara", "Wave", "Real", "Neo"
+}
+
+local isSupported = false
+for _, exec in ipairs(supportedExecutors) do
+    if string.find(executorName:lower(), exec:lower()) then
+        isSupported = true
+        break
+    end
+end
+
+-- Универсальная загрузка Rayfield (совместима со всеми исполнителями)
+local Rayfield
+local rayfieldOk, rayfieldResult = pcall(function()
+    return loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+end)
+
+if rayfieldOk and rayfieldResult then
+    Rayfield = rayfieldResult
+else
+    -- Резервный метод через httpget
+    local httpgetOk, httpgetResult = pcall(function()
+        return loadstring(httpget('https://sirius.menu/rayfield'))()
+    end)
+    if httpgetOk and httpgetResult then
+        Rayfield = httpgetResult
+    else
+        warn("♡ Boykisser Hub: Не удалось загрузить UI. Проверь интернет.")
+        return
+    end
+end
 
 -- ============================================================
--- НАСТРОЙКА ТЕМЫ (розовая)
+-- ИКОНКИ ИЗ icons.rest (Lucide для Roblox)
 -- ============================================================
-local Theme = {
+-- Источник: https://icons.rest/ — библиотека Lucide-иконок для Roblox
+-- ID взяты из открытого индекса lucide-roblox
+local ICONS = {
+    Heart       = "rbxassetid://10723406885",  -- lucide-heart
+    HeartCrack  = "rbxassetid://10723406299",  -- lucide-heart-crack
+    HeartPulse  = "rbxassetid://10723406795",  -- lucide-heart-pulse
+    Flower      = "rbxassetid://10723377415",  -- lucide-flower
+    Flower2     = "rbxassetid://10723377305",  -- lucide-flower-2
+    CalendarHeart = "rbxassetid://10709783835", -- lucide-calendar-heart
+    FolderHeart = "rbxassetid://10723385545",  -- lucide-folder-heart
+    FileHeart   = "rbxassetid://10723357637",  -- lucide-file-heart
+    HeartHandshake = "rbxassetid://10723406480", -- lucide-heart-handshake
+}
+
+-- Картинки бойкиссера (замени на свои ID из Roblox Studio → Toolbox → Decals)
+local IMAGES = {
+    Boykisser1 = "rbxassetid://13220110538",
+    Boykisser2 = "rbxassetid://13220110539",
+    Femboy1    = "rbxassetid://13220110541",
+}
+
+-- ============================================================
+-- РОЗОВАЯ ТЕМА
+-- ============================================================
+local PinkTheme = {
     TextColor = Color3.fromRGB(255, 200, 230),
     PlaceholderColor = Color3.fromRGB(200, 130, 170),
     Background = Color3.fromRGB(35, 15, 30),
     BackgroundSecondary = Color3.fromRGB(50, 20, 45),
     BackgroundTertiary = Color3.fromRGB(60, 25, 55),
-    Accent = Color3.fromRGB(255, 105, 180),   -- Hot Pink
+    Accent = Color3.fromRGB(255, 105, 180),
     Outline = Color3.fromRGB(255, 150, 200),
     Button = Color3.fromRGB(255, 105, 180),
     ButtonHover = Color3.fromRGB(255, 140, 200),
@@ -25,28 +91,13 @@ local Theme = {
 }
 
 -- ============================================================
--- СПИСОК КАРТИНОК (замени ID на свои)
--- ============================================================
--- Как найти ID: открой Roblox Studio → Toolbox → Decals → ищи "boykisser" или "femboy"
--- Или зайди на сайт rbxassetid и скопируй ID.
-local IMAGES = {
-    -- Известные Decal ID, могут не работать — замени своими
-    Boykisser1 = "rbxassetid://13220110538",
-    Boykisser2 = "rbxassetid://13220110539",
-    Boykisser3 = "rbxassetid://13220110540",
-    Femboy1    = "rbxassetid://13220110541",
-    Femboy2    = "rbxassetid://13220110542",
-    Heart      = "rbxassetid://6031091004",
-    Banner     = "rbxassetid://13220110538",
-}
-
--- ============================================================
 -- СОЗДАНИЕ ОКНА
 -- ============================================================
 local Window = Rayfield:CreateWindow({
     Name = "♡ Boykisser Hub ♡",
     LoadingTitle = "♡ Загрузка бойкиссеров... ♡",
     LoadingSubtitle = "Уууу, ты любишь поцелуи с мальчиками? ♡",
+    Theme = "Dark",
     ConfigurationSaving = {
         Enabled = true,
         FolderName = "BoykisserHub",
@@ -56,45 +107,83 @@ local Window = Rayfield:CreateWindow({
 })
 
 -- ============================================================
--- ВКЛАДКИ
+-- ВКЛАДКИ (с иконками из icons.rest)
 -- ============================================================
-local HomeTab     = Window:CreateTab("♡ Главная ♡", 4483362458)
-local FarmTab     = Window:CreateTab("🌸 Фарм 🌸", 4483362458)
-local CombatTab   = Window:CreateTab("💖 Бой 💖", 4483362458)
-local VisualTab   = Window:CreateTab("✨ Визуал ✨", 4483362458)
-local MovementTab = Window:CreateTab("🎀 Движение 🎀", 4483362458)
-local CreditsTab  = Window:CreateTab("💌 О скрипте 💌", 4483362458)
+local HomeTab     = Window:CreateTab("♡ Главная", ICONS.Heart)
+local FarmTab     = Window:CreateTab("🌸 Фарм", ICONS.Flower)
+local CombatTab   = Window:CreateTab("💖 Бой", ICONS.HeartPulse)
+local VisualTab   = Window:CreateTab("✨ Визуал", ICONS.HeartHandshake)
+local MovementTab = Window:CreateTab("🎀 Движение", ICONS.Flower2)
+local CreditsTab  = Window:CreateTab("💌 О скрипте", ICONS.CalendarHeart)
 
 -- ============================================================
--- ГЛАВНАЯ ВКЛАДКА (картинки бойкиссеров)
+-- БАЗОВЫЕ СЕРВИСЫ И ФУНКЦИИ
+-- ============================================================
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local Config = {
+    AutoFarm = false, AutoFarmSpeed = 35,
+    SilentAim = false, Aimbot = false,
+    ESP_Players = false, Fullbright = false,
+    SpeedHack = false, SpeedValue = 50,
+    InfiniteJump = false, Noclip = false,
+    Fly = false, FlySpeed = 50,
+}
+
+local function Notify(title, text)
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = title, Text = text, Duration = 3
+    })
+end
+
+local function GetHumanoid()
+    local char = LocalPlayer.Character
+    return char and char:FindFirstChildOfClass("Humanoid")
+end
+
+local function GetMurderer()
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
+            if plr.Character:FindFirstChild("Knife") or plr.Character:FindFirstChild("KillEffect") then
+                return plr
+            end
+        end
+    end
+    return nil
+end
+
+local function GetSheriff()
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
+            if plr.Character:FindFirstChild("Gun") or plr.Character:FindFirstChild("Revolver") then
+                return plr
+            end
+        end
+    end
+    return nil
+end
+
+-- ============================================================
+-- ГЛАВНАЯ ВКЛАДКА
 -- ============================================================
 HomeTab:CreateParagraph({
     Title = "♡ Добро пожаловать в Boykisser Hub ♡",
     Content = "Ооооо, ты любишь целовать мальчиков? Ты бойкиссер! ♡ Уууу, кисс-кисс!"
 })
 
--- Картинка 1 — главный бойкиссер
 HomeTab:CreateImage({
     Image = IMAGES.Boykisser1,
     Size = UDim2.new(0, 300, 0, 200),
     Position = UDim2.new(0, 0, 0, 0)
 })
 
-HomeTab:CreateParagraph({
-    Title = "Ууу, ты бойкиссер!",
-    Content = "Кисс мальчиков — это так мило~ ♡"
-})
-
--- Картинка 2 — фембой
 HomeTab:CreateImage({
     Image = IMAGES.Femboy1,
-    Size = UDim2.new(0, 300, 0, 200),
-    Position = UDim2.new(0, 0, 0, 0)
-})
-
--- Картинка 3 — второй бойкиссер
-HomeTab:CreateImage({
-    Image = IMAGES.Boykisser2,
     Size = UDim2.new(0, 300, 0, 200),
     Position = UDim2.new(0, 0, 0, 0)
 })
@@ -106,7 +195,7 @@ HomeTab:CreateButton({
             Title = "♡ Boykisser ♡",
             Content = "Ууууу~ ты бойкиссер! ♡ Кисс-кисс!",
             Duration = 5,
-            Image = IMAGES.Heart,
+            Image = ICONS.Heart,
         })
     end,
 })
@@ -114,21 +203,11 @@ HomeTab:CreateButton({
 -- ============================================================
 -- ФАРМ
 -- ============================================================
-local Config = {
-    AutoFarm = false,
-    AutoFarmSpeed = 35,
-}
-
-local function GetHumanoid()
-    local char = game.Players.LocalPlayer.Character
-    return char and char:FindFirstChildOfClass("Humanoid")
-end
-
 local function StartAutoFarm()
     Config.AutoFarm = true
     task.spawn(function()
         while Config.AutoFarm do
-            local char = game.Players.LocalPlayer.Character
+            local char = LocalPlayer.Character
             if char and char:FindFirstChild("HumanoidRootPart") then
                 local hrp = char.HumanoidRootPart
                 local closest, dist = nil, math.huge
@@ -154,12 +233,11 @@ local function StartAutoFarm()
     end)
 end
 
-FarmTab:CreateParagraph({Title = "🌸 Авто-фарм", Content = "Собирает монеты за тебя, пока ты целуешь мальчиков ♡"})
+FarmTab:CreateParagraph({ Title = "🌸 Авто-фарм", Content = "Собирает монеты за тебя ♡" })
 
 FarmTab:CreateToggle({
     Name = "♡ Авто-фарм монет",
-    CurrentValue = false,
-    Flag = "AutoFarm",
+    CurrentValue = false, Flag = "AutoFarm",
     Callback = function(v)
         Config.AutoFarm = v
         if v then StartAutoFarm() else
@@ -179,35 +257,8 @@ FarmTab:CreateSlider({
 -- ============================================================
 -- БОЙ
 -- ============================================================
-local CombatCfg = { SilentAim = false, Aimbot = false }
-
-local function GetMurderer()
-    for _, p in pairs(game.Players:GetPlayers()) do
-        if p ~= game.Players.LocalPlayer and p.Character then
-            if p.Character:FindFirstChild("Knife") or p.Character:FindFirstChild("KillEffect") then
-                return p
-            end
-        end
-    end
-end
-
-task.spawn(function()
-    while true do
-        if CombatCfg.SilentAim or CombatCfg.Aimbot then
-            local m = GetMurderer()
-            if m and m.Character then
-                local head = m.Character:FindFirstChild("Head") or m.Character:FindFirstChild("HumanoidRootPart")
-                if head then
-                    workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, head.Position)
-                end
-            end
-        end
-        task.wait(0.05)
-    end
-end)
-
 CombatTab:CreateImage({
-    Image = IMAGES.Femboy2,
+    Image = IMAGES.Boykisser2,
     Size = UDim2.new(0, 300, 0, 200),
     Position = UDim2.new(0, 0, 0, 0)
 })
@@ -215,29 +266,45 @@ CombatTab:CreateImage({
 CombatTab:CreateToggle({
     Name = "💖 Silent Aim (в убийцу)",
     CurrentValue = false, Flag = "SilentAim",
-    Callback = function(v) CombatCfg.SilentAim = v end,
+    Callback = function(v) Config.SilentAim = v end,
 })
 
 CombatTab:CreateToggle({
-    Name = "💖 Aimbot (камера)",
+    Name = "💖 Aimbot (камера на убийцу)",
     CurrentValue = false, Flag = "Aimbot",
-    Callback = function(v) CombatCfg.Aimbot = v end,
+    Callback = function(v) Config.Aimbot = v end,
 })
+
+-- Цикл аимбота
+task.spawn(function()
+    while true do
+        if Config.SilentAim or Config.Aimbot then
+            local m = GetMurderer()
+            if m and m.Character then
+                local head = m.Character:FindFirstChild("Head") or m.Character:FindFirstChild("HumanoidRootPart")
+                if head then
+                    Camera.CFrame = CFrame.new(Camera.CFrame.Position, head.Position)
+                end
+            end
+        end
+        task.wait(0.05)
+    end
+end)
 
 CombatTab:CreateButton({
     Name = "🗡 Убить всех",
     Callback = function()
         local m = GetMurderer()
         if not m then
-            Rayfield:Notify({Title = "Ошибка ♡", Content = "Убийца не найден ♡", Duration = 3})
+            Rayfield:Notify({ Title = "Ошибка ♡", Content = "Убийца не найден ♡", Duration = 3 })
             return
         end
-        local char = game.Players.LocalPlayer.Character
+        local char = LocalPlayer.Character
         if not char then return end
         local hrp = char:FindFirstChild("HumanoidRootPart")
         if not hrp then return end
-        for _, p in pairs(game.Players:GetPlayers()) do
-            if p ~= game.Players.LocalPlayer and p.Character then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character then
                 local thp = p.Character:FindFirstChild("HumanoidRootPart")
                 if thp then
                     hrp.CFrame = thp.CFrame * CFrame.new(0, 0, -2)
@@ -248,19 +315,18 @@ CombatTab:CreateButton({
                 end
             end
         end
-        Rayfield:Notify({Title = "♡ Kill All", Content = "Готово, кисс-кисс! ♡", Duration = 3})
+        Rayfield:Notify({ Title = "♡ Kill All", Content = "Готово, кисс-кисс! ♡", Duration = 3 })
     end,
 })
 
 -- ============================================================
 -- ВИЗУАЛ
 -- ============================================================
-local VisualCfg = { ESP = false, Fullbright = false }
 local espCache = {}
 
 local function UpdateESP()
-    for _, p in pairs(game.Players:GetPlayers()) do
-        if p ~= game.Players.LocalPlayer and p.Character then
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character then
             local char = p.Character
             local isM = char:FindFirstChild("Knife") or char:FindFirstChild("KillEffect")
             local isS = char:FindFirstChild("Gun") or char:FindFirstChild("Revolver")
@@ -290,14 +356,14 @@ local function UpdateESP()
     end
 end
 
-game:GetService("RunService").RenderStepped:Connect(function()
-    if VisualCfg.ESP then UpdateESP() end
+RunService.RenderStepped:Connect(function()
+    if Config.ESP_Players then UpdateESP() end
 end)
 
-VisualTab:CreateParagraph({Title = "✨ Визуал ♡", Content = "Красота как у фембоя ♡"})
+VisualTab:CreateParagraph({ Title = "✨ Визуал ♡", Content = "Красота как у фембоя ♡" })
 
 VisualTab:CreateImage({
-    Image = IMAGES.Boykisser3,
+    Image = IMAGES.Boykisser1,
     Size = UDim2.new(0, 300, 0, 200),
     Position = UDim2.new(0, 0, 0, 0)
 })
@@ -305,29 +371,28 @@ VisualTab:CreateImage({
 VisualTab:CreateToggle({
     Name = "✨ ESP Игроков (розовое)",
     CurrentValue = false, Flag = "ESP",
-    Callback = function(v) VisualCfg.ESP = v end,
+    Callback = function(v) Config.ESP_Players = v end,
 })
 
 VisualTab:CreateToggle({
     Name = "☀ Fullbright",
     CurrentValue = false, Flag = "Fullbright",
     Callback = function(v)
-        VisualCfg.Fullbright = v
-        local L = game:GetService("Lighting")
+        Config.Fullbright = v
         if v then
-            L.Ambient = Color3.fromRGB(255, 220, 240)
-            L.Brightness = 3
-            L.ClockTime = 12
-            L.FogEnd = 100000
-            L.GlobalShadows = false
-            L.OutdoorAmbient = Color3.fromRGB(255, 220, 240)
+            Lighting.Ambient = Color3.fromRGB(255, 220, 240)
+            Lighting.Brightness = 3
+            Lighting.ClockTime = 12
+            Lighting.FogEnd = 100000
+            Lighting.GlobalShadows = false
+            Lighting.OutdoorAmbient = Color3.fromRGB(255, 220, 240)
         else
-            L.Ambient = Color3.fromRGB(0, 0, 0)
-            L.Brightness = 1
-            L.ClockTime = 14
-            L.FogEnd = 1000
-            L.GlobalShadows = true
-            L.OutdoorAmbient = Color3.fromRGB(70, 70, 70)
+            Lighting.Ambient = Color3.fromRGB(0, 0, 0)
+            Lighting.Brightness = 1
+            Lighting.ClockTime = 14
+            Lighting.FogEnd = 1000
+            Lighting.GlobalShadows = true
+            Lighting.OutdoorAmbient = Color3.fromRGB(70, 70, 70)
         end
     end,
 })
@@ -335,14 +400,12 @@ VisualTab:CreateToggle({
 -- ============================================================
 -- ДВИЖЕНИЕ
 -- ============================================================
-local MoveCfg = { Fly = false, Noclip = false, InfJump = false, Speed = 16 }
-
 MovementTab:CreateSlider({
     Name = "🎀 Скорость ходьбы",
     Range = {16, 200}, Increment = 1, Suffix = "WS",
     CurrentValue = 16, Flag = "SpeedValue",
     Callback = function(v)
-        MoveCfg.Speed = v
+        Config.SpeedValue = v
         local hum = GetHumanoid()
         if hum then hum.WalkSpeed = v end
     end,
@@ -352,10 +415,10 @@ MovementTab:CreateToggle({
     Name = "🎀 Бесконечный прыжок",
     CurrentValue = false, Flag = "InfJump",
     Callback = function(v)
-        MoveCfg.InfJump = v
+        Config.InfiniteJump = v
         if v then
-            game:GetService("UserInputService").JumpRequest:Connect(function()
-                if MoveCfg.InfJump then
+            UserInputService.JumpRequest:Connect(function()
+                if Config.InfiniteJump then
                     local hum = GetHumanoid()
                     if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
                 end
@@ -368,11 +431,11 @@ MovementTab:CreateToggle({
     Name = "🎀 Noclip (сквозь стены)",
     CurrentValue = false, Flag = "Noclip",
     Callback = function(v)
-        MoveCfg.Noclip = v
+        Config.Noclip = v
         if v then
             task.spawn(function()
-                while MoveCfg.Noclip do
-                    local char = game.Players.LocalPlayer.Character
+                while Config.Noclip do
+                    local char = LocalPlayer.Character
                     if char then
                         for _, part in pairs(char:GetDescendants()) do
                             if part:IsA("BasePart") then part.CanCollide = false end
@@ -389,8 +452,8 @@ MovementTab:CreateToggle({
     Name = "🎀 Fly (полет)",
     CurrentValue = false, Flag = "Fly",
     Callback = function(v)
-        MoveCfg.Fly = v
-        local char = game.Players.LocalPlayer.Character
+        Config.Fly = v
+        local char = LocalPlayer.Character
         if not char then return end
         local hrp = char:FindFirstChild("HumanoidRootPart")
         if not hrp then return end
@@ -402,14 +465,14 @@ MovementTab:CreateToggle({
             bg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
             bg.P = 1000
             task.spawn(function()
-                while MoveCfg.Fly do
+                while Config.Fly do
                     local hum = char:FindFirstChildOfClass("Humanoid")
                     local dir = hum and hum.MoveDirection or Vector3.zero
-                    if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.Space) then
+                    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
                         dir = dir + Vector3.new(0, 1, 0)
                     end
-                    bv.Velocity = dir * 50
-                    bg.CFrame = workspace.CurrentCamera.CFrame
+                    bv.Velocity = dir * Config.FlySpeed
+                    bg.CFrame = Camera.CFrame
                     task.wait()
                 end
                 bv:Destroy(); bg:Destroy()
@@ -427,14 +490,14 @@ MovementTab:CreateToggle({
 -- О СКРИПТЕ
 -- ============================================================
 CreditsTab:CreateImage({
-    Image = IMAGES.Boykisser1,
+    Image = IMAGES.Boykisser2,
     Size = UDim2.new(0, 300, 0, 200),
     Position = UDim2.new(0, 0, 0, 0)
 })
 
 CreditsTab:CreateParagraph({
     Title = "💌 ♡ Boykisser Hub ♡",
-    Content = "Собрано из открытых источников: Zyn-ic, Spark Hub, Mr. Makakin Hub, Kuni Hub и др. ♡\n\nСделано с любовью для всех бойкиссеров ♡\nУууу, кисс-кисс! ♡"
+    Content = "Иконки: icons.rest (Lucide для Roblox)\nСовместимость: Delta X, Xeno, Arceus, Solara, Wave, Arceus X Neo, Real\n\nСделано с любовью для всех бойкиссеров ♡\nУууу, кисс-кисс! ♡"
 })
 
 CreditsTab:CreateButton({
@@ -443,17 +506,16 @@ CreditsTab:CreateButton({
 })
 
 -- ============================================================
--- УВЕДОМЛЕНИЕ О ЗАГРУЗКЕ
+-- УВЕДОМЛЕНИЕ О ЗАГРУЗКЕ + АНТИ-АФК
 -- ============================================================
 Rayfield:Notify({
     Title = "♡ Boykisser Hub ♡",
     Content = "Уууу, загружено! Ты бойкиссер! ♡",
     Duration = 5,
-    Image = IMAGES.Heart,
+    Image = ICONS.Heart,
 })
 
--- Анти-АФК
-game:GetService("Players").LocalPlayer.Idled:Connect(function()
+LocalPlayer.Idled:Connect(function()
     local vu = game:GetService("VirtualUser")
     vu:CaptureController()
     vu:ClickButton2(Vector2.new())
