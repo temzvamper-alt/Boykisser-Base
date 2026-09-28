@@ -1,145 +1,672 @@
 -- ============================================================
--- ♡ Boykisser Hub ♡ — Pink Edition
--- Иконки: icons.rest (Lucide для Roblox)
+-- ♡ Boykisser Hub ♡ — Custom UI (Pulse-style)
+-- Кастомная библиотека с иконками настроек у каждой функции
 -- Совместимость: Delta X, Xeno, Arceus, Solara, Wave, Arceus X Neo, Real
 -- ============================================================
 
 -- ============================================================
--- ПРОВЕРКА СОВМЕСТИМОСТИ ИСПОЛНИТЕЛЯ
+-- ПРОВЕРКА ИСПОЛНИТЕЛЯ
 -- ============================================================
 local executorName = "Unknown"
-local ok, name = pcall(function()
-    return identifyexecutor and identifyexecutor() or (getexecutorname and getexecutorname()) or "Unknown"
-end)
-if ok and name then executorName = name end
-
--- Список поддерживаемых исполнителей
-local supportedExecutors = {
-    "Delta", "Xeno", "Arceus", "Solara", "Wave", "Real", "Neo"
-}
-
-local isSupported = false
-for _, exec in ipairs(supportedExecutors) do
-    if string.find(executorName:lower(), exec:lower()) then
-        isSupported = true
-        break
-    end
-end
-
--- Универсальная загрузка Rayfield (совместима со всеми исполнителями)
-local Rayfield
-local rayfieldOk, rayfieldResult = pcall(function()
-    return loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+pcall(function()
+    executorName = identifyexecutor and identifyexecutor() or (getexecutorname and getexecutorname()) or "Unknown"
 end)
 
-if rayfieldOk and rayfieldResult then
-    Rayfield = rayfieldResult
-else
-    -- Резервный метод через httpget
-    local httpgetOk, httpgetResult = pcall(function()
-        return loadstring(httpget('https://sirius.menu/rayfield'))()
-    end)
-    if httpgetOk and httpgetResult then
-        Rayfield = httpgetResult
-    else
-        warn("♡ Boykisser Hub: Не удалось загрузить UI. Проверь интернет.")
-        return
-    end
-end
-
 -- ============================================================
--- ИКОНКИ ИЗ icons.rest (Lucide для Roblox)
--- ============================================================
--- Источник: https://icons.rest/ — библиотека Lucide-иконок для Roblox
--- ID взяты из открытого индекса lucide-roblox
-local ICONS = {
-    Heart       = "rbxassetid://10723406885",  -- lucide-heart
-    HeartCrack  = "rbxassetid://10723406299",  -- lucide-heart-crack
-    HeartPulse  = "rbxassetid://10723406795",  -- lucide-heart-pulse
-    Flower      = "rbxassetid://10723377415",  -- lucide-flower
-    Flower2     = "rbxassetid://10723377305",  -- lucide-flower-2
-    CalendarHeart = "rbxassetid://10709783835", -- lucide-calendar-heart
-    FolderHeart = "rbxassetid://10723385545",  -- lucide-folder-heart
-    FileHeart   = "rbxassetid://10723357637",  -- lucide-file-heart
-    HeartHandshake = "rbxassetid://10723406480", -- lucide-heart-handshake
-}
-
--- Картинки бойкиссера (замени на свои ID из Roblox Studio → Toolbox → Decals)
-local IMAGES = {
-    Boykisser1 = "rbxassetid://13220110538",
-    Boykisser2 = "rbxassetid://13220110539",
-    Femboy1    = "rbxassetid://13220110541",
-}
-
--- ============================================================
--- РОЗОВАЯ ТЕМА
--- ============================================================
-local PinkTheme = {
-    TextColor = Color3.fromRGB(255, 200, 230),
-    PlaceholderColor = Color3.fromRGB(200, 130, 170),
-    Background = Color3.fromRGB(35, 15, 30),
-    BackgroundSecondary = Color3.fromRGB(50, 20, 45),
-    BackgroundTertiary = Color3.fromRGB(60, 25, 55),
-    Accent = Color3.fromRGB(255, 105, 180),
-    Outline = Color3.fromRGB(255, 150, 200),
-    Button = Color3.fromRGB(255, 105, 180),
-    ButtonHover = Color3.fromRGB(255, 140, 200),
-    Toggle = Color3.fromRGB(255, 105, 180),
-    Slider = Color3.fromRGB(255, 105, 180),
-    Dropdown = Color3.fromRGB(50, 20, 45),
-    SubText = Color3.fromRGB(230, 160, 200),
-}
-
--- ============================================================
--- СОЗДАНИЕ ОКНА
--- ============================================================
-local Window = Rayfield:CreateWindow({
-    Name = "♡ Boykisser Hub ♡",
-    LoadingTitle = "♡ Загрузка бойкиссеров... ♡",
-    LoadingSubtitle = "Уууу, ты любишь поцелуи с мальчиками? ♡",
-    Theme = "Dark",
-    ConfigurationSaving = {
-        Enabled = true,
-        FolderName = "BoykisserHub",
-        FileName = "PinkConfig"
-    },
-    KeySystem = false,
-})
-
--- ============================================================
--- ВКЛАДКИ (с иконками из icons.rest)
--- ============================================================
-local HomeTab     = Window:CreateTab("♡ Главная", ICONS.Heart)
-local FarmTab     = Window:CreateTab("🌸 Фарм", ICONS.Flower)
-local CombatTab   = Window:CreateTab("💖 Бой", ICONS.HeartPulse)
-local VisualTab   = Window:CreateTab("✨ Визуал", ICONS.HeartHandshake)
-local MovementTab = Window:CreateTab("🎀 Движение", ICONS.Flower2)
-local CreditsTab  = Window:CreateTab("💌 О скрипте", ICONS.CalendarHeart)
-
--- ============================================================
--- БАЗОВЫЕ СЕРВИСЫ И ФУНКЦИИ
+-- СЕРВИСЫ
 -- ============================================================
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
+local Mouse = LocalPlayer:GetMouse()
 
+-- ============================================================
+-- РОЗОВАЯ ТЕМА
+-- ============================================================
+local Theme = {
+    Main          = Color3.fromRGB(25, 12, 22),
+    Secondary     = Color3.fromRGB(38, 18, 34),
+    Tertiary      = Color3.fromRGB(52, 24, 46),
+    Accent        = Color3.fromRGB(255, 105, 180),   -- Hot Pink
+    AccentHover   = Color3.fromRGB(255, 140, 200),
+    Text          = Color3.fromRGB(255, 220, 235),
+    SubText       = Color3.fromRGB(200, 140, 175),
+    Outline       = Color3.fromRGB(255, 150, 200),
+    ToggleOff     = Color3.fromRGB(70, 40, 65),
+    ToggleOn      = Color3.fromRGB(255, 105, 180),
+    Font          = Enum.Font.GothamMedium,
+    FontBold      = Enum.Font.GothamBold,
+    Heart         = "♡",
+}
+
+-- ============================================================
+-- ИКОНКИ (Lucide/icons.rest)
+-- ============================================================
+local ICONS = {
+    Heart         = "rbxassetid://10723406885",
+    HeartPulse    = "rbxassetid://10723406795",
+    HeartHandshake= "rbxassetid://10723406480",
+    Flower        = "rbxassetid://10723377415",
+    Flower2       = "rbxassetid://10723377305",
+    CalendarHeart = "rbxassetid://10709783835",
+    Settings      = "rbxassetid://10734923529",  -- lucide-settings
+    Gear          = "rbxassetid://10734923529",
+}
+
+-- ============================================================
+-- БАЗОВЫЕ ФУНКЦИИ UI
+-- ============================================================
+local function Create(className, props)
+    local obj = Instance.new(className)
+    for k, v in pairs(props) do
+        if k ~= "Parent" then obj[k] = v end
+    end
+    if props.Parent then obj.Parent = props.Parent end
+    return obj
+end
+
+local function Corner(parent, radius)
+    return Create("UICorner", {CornerRadius = UDim.new(0, radius or 8), Parent = parent})
+end
+
+local function Stroke(parent, color, thickness, transparency)
+    return Create("UIStroke", {
+        Color = color or Theme.Outline,
+        Thickness = thickness or 1,
+        Transparency = transparency or 0.5,
+        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+        Parent = parent
+    })
+end
+
+local function Tween(obj, time, props)
+    local tw = TweenService:Create(obj, TweenInfo.new(time or 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props)
+    tw:Play()
+    return tw
+end
+
+-- ============================================================
+-- УВЕДОМЛЕНИЯ
+-- ============================================================
+local NotifHolder = Create("Frame", {
+    Name = "BoykisserNotifs",
+    Size = UDim2.new(0, 300, 1, 0),
+    Position = UDim2.new(1, -320, 0, 0),
+    BackgroundTransparency = 1,
+    Parent = game:GetService("CoreGui"),
+    ZIndex = 999
+})
+Create("UIListLayout", {
+    Padding = UDim.new(0, 8),
+    VerticalAlignment = Enum.VerticalAlignment.Bottom,
+    SortOrder = Enum.SortOrder.LayoutOrder,
+    Parent = NotifHolder
+})
+
+local function Notify(title, text, duration)
+    local notif = Create("Frame", {
+        Size = UDim2.new(1, 0, 0, 70),
+        BackgroundColor3 = Theme.Secondary,
+        BorderSizePixel = 0,
+        Parent = NotifHolder
+    })
+    Corner(notif, 10)
+    Stroke(notif, Theme.Accent, 1.5, 0.2)
+    
+    local accent = Create("Frame", {
+        Size = UDim2.new(0, 4, 1, 0),
+        BackgroundColor3 = Theme.Accent,
+        BorderSizePixel = 0,
+        Parent = notif
+    })
+    Corner(accent, 4)
+    
+    Create("TextLabel", {
+        Size = UDim2.new(1, -20, 0, 24),
+        Position = UDim2.new(0, 14, 0, 8),
+        BackgroundTransparency = 1,
+        Text = Theme.Heart .. " " .. title,
+        TextColor3 = Theme.Accent,
+        Font = Theme.FontBold,
+        TextSize = 15,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = notif
+    })
+    Create("TextLabel", {
+        Size = UDim2.new(1, -20, 0, 30),
+        Position = UDim2.new(0, 14, 0, 32),
+        BackgroundTransparency = 1,
+        Text = text,
+        TextColor3 = Theme.Text,
+        Font = Theme.Font,
+        TextSize = 12,
+        TextWrapped = true,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = notif
+    })
+    
+    task.delay(duration or 4, function()
+        Tween(notif, 0.3, {BackgroundTransparency = 1})
+        task.wait(0.3)
+        notif:Destroy()
+    end)
+end
+
+-- ============================================================
+-- ГЛАВНОЕ ОКНО
+-- ============================================================
+local ScreenGui = Create("ScreenGui", {
+    Name = "BoykisserHub",
+    ResetOnSpawn = false,
+    ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+    Parent = game:GetService("CoreGui")
+})
+
+local Main = Create("Frame", {
+    Name = "Main",
+    Size = UDim2.new(0, 620, 0, 420),
+    Position = UDim2.new(0.5, -310, 0.5, -210),
+    BackgroundColor3 = Theme.Main,
+    BorderSizePixel = 0,
+    Parent = ScreenGui
+})
+Corner(Main, 14)
+Stroke(Main, Theme.Accent, 1.5, 0.3)
+
+-- Верхняя панель
+local TopBar = Create("Frame", {
+    Size = UDim2.new(1, 0, 0, 42),
+    BackgroundColor3 = Theme.Secondary,
+    BorderSizePixel = 0,
+    Parent = Main
+})
+Corner(TopBar, 14)
+
+local TopBarCover = Create("Frame", {
+    Size = UDim2.new(1, 0, 0, 14),
+    Position = UDim2.new(0, 0, 1, -14),
+    BackgroundColor3 = Theme.Secondary,
+    BorderSizePixel = 0,
+    Parent = TopBar
+})
+
+Create("TextLabel", {
+    Size = UDim2.new(0, 300, 1, 0),
+    Position = UDim2.new(0, 16, 0, 0),
+    BackgroundTransparency = 1,
+    Text = "♡ Boykisser Hub ♡",
+    TextColor3 = Theme.Accent,
+    Font = Theme.FontBold,
+    TextSize = 16,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    Parent = TopBar
+})
+
+Create("TextLabel", {
+    Size = UDim2.new(0, 200, 1, 0),
+    Position = UDim2.new(1, -230, 0, 0),
+    BackgroundTransparency = 1,
+    Text = "Уууу, " .. executorName .. " ♡",
+    TextColor3 = Theme.SubText,
+    Font = Theme.Font,
+    TextSize = 11,
+    TextXAlignment = Enum.TextXAlignment.Right,
+    Parent = TopBar
+})
+
+-- Кнопка закрытия
+local CloseBtn = Create("TextButton", {
+    Size = UDim2.new(0, 28, 0, 28),
+    Position = UDim2.new(1, -36, 0, 7),
+    BackgroundColor3 = Theme.Tertiary,
+    Text = "✕",
+    TextColor3 = Theme.Accent,
+    Font = Theme.FontBold,
+    TextSize = 14,
+    AutoButtonColor = false,
+    Parent = TopBar
+})
+Corner(CloseBtn, 8)
+CloseBtn.MouseButton1Click:Connect(function()
+    Tween(Main, 0.2, {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0)})
+    task.wait(0.2)
+    ScreenGui:Destroy()
+end)
+CloseBtn.MouseEnter:Connect(function() Tween(CloseBtn, 0.15, {BackgroundColor3 = Theme.Accent}) Tween(CloseBtn, 0.15, {TextColor3 = Theme.Main}) end)
+CloseBtn.MouseLeave:Connect(function() Tween(CloseBtn, 0.15, {BackgroundColor3 = Theme.Tertiary}) Tween(CloseBtn, 0.15, {TextColor3 = Theme.Accent}) end)
+
+-- Кнопка сворачивания
+local MinBtn = Create("TextButton", {
+    Size = UDim2.new(0, 28, 0, 28),
+    Position = UDim2.new(1, -70, 0, 7),
+    BackgroundColor3 = Theme.Tertiary,
+    Text = "—",
+    TextColor3 = Theme.Accent,
+    Font = Theme.FontBold,
+    TextSize = 14,
+    AutoButtonColor = false,
+    Parent = TopBar
+})
+Corner(MinBtn, 8)
+
+-- Перетаскивание
+local dragging, dragStart, startPos
+TopBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = Main.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- ============================================================
+-- ВКЛАДКИ
+-- ============================================================
+local TabHolder = Create("Frame", {
+    Size = UDim2.new(0, 130, 1, -52),
+    Position = UDim2.new(0, 8, 0, 46),
+    BackgroundColor3 = Theme.Secondary,
+    BorderSizePixel = 0,
+    Parent = Main
+})
+Corner(TabHolder, 10)
+Create("UIListLayout", {
+    Padding = UDim.new(0, 4),
+    SortOrder = Enum.SortOrder.LayoutOrder,
+    Parent = TabHolder
+})
+Create("UIPadding", {
+    PaddingTop = UDim.new(0, 8),
+    PaddingLeft = UDim.new(0, 6),
+    PaddingRight = UDim.new(0, 6),
+    Parent = TabHolder
+})
+
+local ContentHolder = Create("Frame", {
+    Size = UDim2.new(1, -146, 1, -52),
+    Position = UDim2.new(0, 138, 0, 46),
+    BackgroundColor3 = Theme.Secondary,
+    BorderSizePixel = 0,
+    Parent = Main
+})
+Corner(ContentHolder, 10)
+
+local tabs = {}
+local currentTab = nil
+
+local function CreateTab(name, iconId)
+    local tabBtn = Create("TextButton", {
+        Size = UDim2.new(1, 0, 0, 32),
+        BackgroundColor3 = Theme.Tertiary,
+        Text = "  " .. name,
+        TextColor3 = Theme.SubText,
+        Font = Theme.Font,
+        TextSize = 13,
+        AutoButtonColor = false,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = TabHolder
+    })
+    Corner(tabBtn, 8)
+    
+    if iconId then
+        Create("ImageLabel", {
+            Size = UDim2.new(0, 18, 0, 18),
+            Position = UDim2.new(1, -26, 0.5, -9),
+            BackgroundTransparency = 1,
+            Image = iconId,
+            ImageColor3 = Theme.SubText,
+            Parent = tabBtn
+        })
+    end
+    
+    local scroll = Create("ScrollingFrame", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ScrollBarThickness = 3,
+        ScrollBarImageColor3 = Theme.Accent,
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        Visible = false,
+        Parent = ContentHolder
+    })
+    Corner(scroll, 10)
+    Create("UIListLayout", {
+        Padding = UDim.new(0, 8),
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Parent = scroll
+    })
+    Create("UIPadding", {
+        PaddingTop = UDim.new(0, 10),
+        PaddingLeft = UDim.new(0, 10),
+        PaddingRight = UDim.new(0, 10),
+        PaddingBottom = UDim.new(0, 10),
+        Parent = scroll
+    })
+    scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    
+    local tab = { Button = tabBtn, Content = scroll, Name = name }
+    tabs[name] = tab
+    
+    tabBtn.MouseButton1Click:Connect(function()
+        for _, t in pairs(tabs) do
+            Tween(t.Button, 0.15, {BackgroundColor3 = Theme.Tertiary, TextColor3 = Theme.SubText})
+            t.Content.Visible = false
+        end
+        Tween(tabBtn, 0.15, {BackgroundColor3 = Theme.Accent, TextColor3 = Theme.Main})
+        scroll.Visible = true
+        currentTab = name
+    end)
+    
+    if not currentTab then
+        Tween(tabBtn, 0.15, {BackgroundColor3 = Theme.Accent, TextColor3 = Theme.Main})
+        scroll.Visible = true
+        currentTab = name
+    end
+    
+    return tab
+end
+
+-- ============================================================
+-- ЭЛЕМЕНТЫ С ИКОНКОЙ НАСТРОЕК (как в Pulse Hub)
+-- ============================================================
+local function CreateSettingsPopup(parentBtn, options)
+    -- Отдельное окошко с настройками, появляется при клике на шестерёнку
+    local popup = Create("Frame", {
+        Size = UDim2.new(0, 200, 0, math.min(#options * 32 + 20, 240)),
+        Position = UDim2.new(1, 8, 0, 0),
+        BackgroundColor3 = Theme.Tertiary,
+        BorderSizePixel = 0,
+        Visible = false,
+        ZIndex = 50,
+        Parent = parentBtn
+    })
+    Corner(popup, 8)
+    Stroke(popup, Theme.Accent, 1, 0.3)
+    Create("UIListLayout", {
+        Padding = UDim.new(0, 4),
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Parent = popup
+    })
+    Create("UIPadding", {
+        PaddingTop = UDim.new(0, 8),
+        PaddingLeft = UDim.new(0, 8),
+        PaddingRight = UDim.new(0, 8),
+        PaddingBottom = UDim.new(0, 8),
+        Parent = popup
+    })
+    
+    for _, opt in ipairs(options) do
+        local row = Create("TextButton", {
+            Size = UDim2.new(1, 0, 0, 28),
+            BackgroundColor3 = Theme.Secondary,
+            Text = opt.Name,
+            TextColor3 = Theme.Text,
+            Font = Theme.Font,
+            TextSize = 12,
+            AutoButtonColor = false,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Parent = popup
+        })
+        Corner(row, 6)
+        Create("UIPadding", {PaddingLeft = UDim.new(0, 8), Parent = row})
+        row.MouseButton1Click:Connect(function()
+            if opt.Callback then opt.Callback() end
+        end)
+    end
+    
+    return popup
+end
+
+local function CreateToggle(tab, name, default, callback, settingsOptions)
+    local holder = Create("Frame", {
+        Size = UDim2.new(1, 0, 0, 44),
+        BackgroundColor3 = Theme.Tertiary,
+        BorderSizePixel = 0,
+        Parent = tab.Content
+    })
+    Corner(holder, 8)
+    
+    Create("TextLabel", {
+        Size = UDim2.new(1, -80, 1, 0),
+        Position = UDim2.new(0, 12, 0, 0),
+        BackgroundTransparency = 1,
+        Text = Theme.Heart .. " " .. name,
+        TextColor3 = Theme.Text,
+        Font = Theme.Font,
+        TextSize = 13,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = holder
+    })
+    
+    -- Тумблер
+    local toggleBtn = Create("TextButton", {
+        Size = UDim2.new(0, 44, 0, 22),
+        Position = UDim2.new(1, -60, 0.5, -11),
+        BackgroundColor3 = default and Theme.ToggleOn or Theme.ToggleOff,
+        Text = "",
+        AutoButtonColor = false,
+        Parent = holder
+    })
+    Corner(toggleBtn, 11)
+    
+    local dot = Create("Frame", {
+        Size = UDim2.new(0, 16, 0, 16),
+        Position = default and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8),
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        BorderSizePixel = 0,
+        Parent = toggleBtn
+    })
+    Corner(dot, 8)
+    
+    local state = default
+    local function updateToggle()
+        Tween(toggleBtn, 0.2, {BackgroundColor3 = state and Theme.ToggleOn or Theme.ToggleOff})
+        Tween(dot, 0.2, {Position = state and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)})
+    end
+    updateToggle()
+    
+    toggleBtn.MouseButton1Click:Connect(function()
+        state = not state
+        updateToggle()
+        if callback then callback(state) end
+    end)
+    
+    -- Шестерёнка настроек (если переданы options)
+    if settingsOptions and #settingsOptions > 0 then
+        local gearBtn = Create("TextButton", {
+            Size = UDim2.new(0, 22, 0, 22),
+            Position = UDim2.new(1, -32, 0.5, -11),
+            BackgroundColor3 = Theme.Secondary,
+            Text = "⚙",
+            TextColor3 = Theme.Accent,
+            Font = Theme.FontBold,
+            TextSize = 14,
+            AutoButtonColor = false,
+            Parent = holder
+        })
+        Corner(gearBtn, 6)
+        
+        local popup = CreateSettingsPopup(gearBtn, settingsOptions)
+        
+        gearBtn.MouseButton1Click:Connect(function()
+            popup.Visible = not popup.Visible
+        end)
+        gearBtn.MouseEnter:Connect(function() Tween(gearBtn, 0.15, {BackgroundColor3 = Theme.Accent}) Tween(gearBtn, 0.15, {TextColor3 = Theme.Main}) end)
+        gearBtn.MouseLeave:Connect(function() Tween(gearBtn, 0.15, {BackgroundColor3 = Theme.Secondary}) Tween(gearBtn, 0.15, {TextColor3 = Theme.Accent}) end)
+    end
+    
+    return holder
+end
+
+local function CreateSlider(tab, name, min, max, default, suffix, callback)
+    local holder = Create("Frame", {
+        Size = UDim2.new(1, 0, 0, 60),
+        BackgroundColor3 = Theme.Tertiary,
+        BorderSizePixel = 0,
+        Parent = tab.Content
+    })
+    Corner(holder, 8)
+    
+    Create("TextLabel", {
+        Size = UDim2.new(1, -20, 0, 20),
+        Position = UDim2.new(0, 12, 0, 6),
+        BackgroundTransparency = 1,
+        Text = Theme.Heart .. " " .. name,
+        TextColor3 = Theme.Text,
+        Font = Theme.Font,
+        TextSize = 13,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = holder
+    })
+    
+    local valueLabel = Create("TextLabel", {
+        Size = UDim2.new(0, 60, 0, 20),
+        Position = UDim2.new(1, -72, 0, 6),
+        BackgroundTransparency = 1,
+        Text = tostring(default) .. (suffix or ""),
+        TextColor3 = Theme.Accent,
+        Font = Theme.FontBold,
+        TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Right,
+        Parent = holder
+    })
+    
+    local sliderBg = Create("Frame", {
+        Size = UDim2.new(1, -24, 0, 8),
+        Position = UDim2.new(0, 12, 0, 36),
+        BackgroundColor3 = Theme.ToggleOff,
+        BorderSizePixel = 0,
+        Parent = holder
+    })
+    Corner(sliderBg, 4)
+    
+    local fill = Create("Frame", {
+        Size = UDim2.new((default - min) / (max - min), 0, 1, 0),
+        BackgroundColor3 = Theme.Accent,
+        BorderSizePixel = 0,
+        Parent = sliderBg
+    })
+    Corner(fill, 4)
+    
+    local dragging = false
+    local function updateSlider(input)
+        local pos = math.clamp((input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
+        local val = math.floor(min + (max - min) * pos)
+        fill.Size = UDim2.new(pos, 0, 1, 0)
+        valueLabel.Text = tostring(val) .. (suffix or "")
+        if callback then callback(val) end
+    end
+    
+    sliderBg.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            updateSlider(input)
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            updateSlider(input)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+    
+    return holder
+end
+
+local function CreateButton(tab, name, callback)
+    local btn = Create("TextButton", {
+        Size = UDim2.new(1, 0, 0, 36),
+        BackgroundColor3 = Theme.Tertiary,
+        Text = Theme.Heart .. " " .. name .. " " .. Theme.Heart,
+        TextColor3 = Theme.Text,
+        Font = Theme.Font,
+        TextSize = 13,
+        AutoButtonColor = false,
+        Parent = tab.Content
+    })
+    Corner(btn, 8)
+    btn.MouseEnter:Connect(function() Tween(btn, 0.15, {BackgroundColor3 = Theme.Accent, TextColor3 = Theme.Main}) end)
+    btn.MouseLeave:Connect(function() Tween(btn, 0.15, {BackgroundColor3 = Theme.Tertiary, TextColor3 = Theme.Text}) end)
+    btn.MouseButton1Click:Connect(function()
+        if callback then callback() end
+    end)
+    return btn
+end
+
+local function CreateParagraph(tab, title, content)
+    local holder = Create("Frame", {
+        Size = UDim2.new(1, 0, 0, 70),
+        BackgroundColor3 = Theme.Tertiary,
+        BorderSizePixel = 0,
+        Parent = tab.Content
+    })
+    Corner(holder, 8)
+    Create("TextLabel", {
+        Size = UDim2.new(1, -20, 0, 22),
+        Position = UDim2.new(0, 10, 0, 6),
+        BackgroundTransparency = 1,
+        Text = title,
+        TextColor3 = Theme.Accent,
+        Font = Theme.FontBold,
+        TextSize = 13,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = holder
+    })
+    Create("TextLabel", {
+        Size = UDim2.new(1, -20, 1, -32),
+        Position = UDim2.new(0, 10, 0, 28),
+        BackgroundTransparency = 1,
+        Text = content,
+        TextColor3 = Theme.SubText,
+        Font = Theme.Font,
+        TextSize = 11,
+        TextWrapped = true,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Top,
+        Parent = holder
+    })
+    return holder
+end
+
+local function CreateImage(tab, imageId, height)
+    local img = Create("ImageLabel", {
+        Size = UDim2.new(1, 0, 0, height or 180),
+        BackgroundColor3 = Theme.Tertiary,
+        BorderSizePixel = 0,
+        Image = imageId,
+        ScaleType = Enum.ScaleType.Fit,
+        Parent = tab.Content
+    })
+    Corner(img, 8)
+    return img
+end
+
+-- ============================================================
+-- ФУНКЦИИ MM2
+-- ============================================================
 local Config = {
     AutoFarm = false, AutoFarmSpeed = 35,
     SilentAim = false, Aimbot = false,
-    ESP_Players = false, Fullbright = false,
-    SpeedHack = false, SpeedValue = 50,
-    InfiniteJump = false, Noclip = false,
-    Fly = false, FlySpeed = 50,
+    ESP = false, Fullbright = false,
+    InfiniteJump = false, Noclip = false, Fly = false, FlySpeed = 50,
 }
-
-local function Notify(title, text)
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = title, Text = text, Duration = 3
-    })
-end
 
 local function GetHumanoid()
     local char = LocalPlayer.Character
@@ -154,7 +681,6 @@ local function GetMurderer()
             end
         end
     end
-    return nil
 end
 
 local function GetSheriff()
@@ -165,46 +691,9 @@ local function GetSheriff()
             end
         end
     end
-    return nil
 end
 
--- ============================================================
--- ГЛАВНАЯ ВКЛАДКА
--- ============================================================
-HomeTab:CreateParagraph({
-    Title = "♡ Добро пожаловать в Boykisser Hub ♡",
-    Content = "Ооооо, ты любишь целовать мальчиков? Ты бойкиссер! ♡ Уууу, кисс-кисс!"
-})
-
-HomeTab:CreateImage({
-    Image = IMAGES.Boykisser1,
-    Size = UDim2.new(0, 300, 0, 200),
-    Position = UDim2.new(0, 0, 0, 0)
-})
-
-HomeTab:CreateImage({
-    Image = IMAGES.Femboy1,
-    Size = UDim2.new(0, 300, 0, 200),
-    Position = UDim2.new(0, 0, 0, 0)
-})
-
-HomeTab:CreateButton({
-    Name = "♡ Сказать «Ууу» ♡",
-    Callback = function()
-        Rayfield:Notify({
-            Title = "♡ Boykisser ♡",
-            Content = "Ууууу~ ты бойкиссер! ♡ Кисс-кисс!",
-            Duration = 5,
-            Image = ICONS.Heart,
-        })
-    end,
-})
-
--- ============================================================
--- ФАРМ
--- ============================================================
 local function StartAutoFarm()
-    Config.AutoFarm = true
     task.spawn(function()
         while Config.AutoFarm do
             local char = LocalPlayer.Character
@@ -222,10 +711,7 @@ local function StartAutoFarm()
                 end
                 if closest then
                     local hum = char:FindFirstChildOfClass("Humanoid")
-                    if hum then
-                        hum.WalkSpeed = Config.AutoFarmSpeed
-                        hum:MoveTo(closest.Position)
-                    end
+                    if hum then hum.WalkSpeed = Config.AutoFarmSpeed hum:MoveTo(closest.Position) end
                 end
             end
             task.wait(0.3)
@@ -233,97 +719,20 @@ local function StartAutoFarm()
     end)
 end
 
-FarmTab:CreateParagraph({ Title = "🌸 Авто-фарм", Content = "Собирает монеты за тебя ♡" })
-
-FarmTab:CreateToggle({
-    Name = "♡ Авто-фарм монет",
-    CurrentValue = false, Flag = "AutoFarm",
-    Callback = function(v)
-        Config.AutoFarm = v
-        if v then StartAutoFarm() else
-            local hum = GetHumanoid()
-            if hum then hum.WalkSpeed = 16 end
-        end
-    end,
-})
-
-FarmTab:CreateSlider({
-    Name = "Скорость автофарма",
-    Range = {16, 200}, Increment = 1, Suffix = "WS",
-    CurrentValue = 35, Flag = "AutoFarmSpeed",
-    Callback = function(v) Config.AutoFarmSpeed = v end,
-})
-
--- ============================================================
--- БОЙ
--- ============================================================
-CombatTab:CreateImage({
-    Image = IMAGES.Boykisser2,
-    Size = UDim2.new(0, 300, 0, 200),
-    Position = UDim2.new(0, 0, 0, 0)
-})
-
-CombatTab:CreateToggle({
-    Name = "💖 Silent Aim (в убийцу)",
-    CurrentValue = false, Flag = "SilentAim",
-    Callback = function(v) Config.SilentAim = v end,
-})
-
-CombatTab:CreateToggle({
-    Name = "💖 Aimbot (камера на убийцу)",
-    CurrentValue = false, Flag = "Aimbot",
-    Callback = function(v) Config.Aimbot = v end,
-})
-
--- Цикл аимбота
 task.spawn(function()
     while true do
         if Config.SilentAim or Config.Aimbot then
             local m = GetMurderer()
             if m and m.Character then
                 local head = m.Character:FindFirstChild("Head") or m.Character:FindFirstChild("HumanoidRootPart")
-                if head then
-                    Camera.CFrame = CFrame.new(Camera.CFrame.Position, head.Position)
-                end
+                if head then Camera.CFrame = CFrame.new(Camera.CFrame.Position, head.Position) end
             end
         end
         task.wait(0.05)
     end
 end)
 
-CombatTab:CreateButton({
-    Name = "🗡 Убить всех",
-    Callback = function()
-        local m = GetMurderer()
-        if not m then
-            Rayfield:Notify({ Title = "Ошибка ♡", Content = "Убийца не найден ♡", Duration = 3 })
-            return
-        end
-        local char = LocalPlayer.Character
-        if not char then return end
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character then
-                local thp = p.Character:FindFirstChild("HumanoidRootPart")
-                if thp then
-                    hrp.CFrame = thp.CFrame * CFrame.new(0, 0, -2)
-                    task.wait(0.05)
-                    local tool = char:FindFirstChildOfClass("Tool")
-                    if tool then tool:Activate() end
-                    task.wait(0.05)
-                end
-            end
-        end
-        Rayfield:Notify({ Title = "♡ Kill All", Content = "Готово, кисс-кисс! ♡", Duration = 3 })
-    end,
-})
-
--- ============================================================
--- ВИЗУАЛ
--- ============================================================
 local espCache = {}
-
 local function UpdateESP()
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character then
@@ -334,17 +743,8 @@ local function UpdateESP()
             if not espCache[p] then
                 local hrp = char:FindFirstChild("HumanoidRootPart")
                 if hrp then
-                    local bb = Instance.new("BillboardGui")
-                    bb.Size = UDim2.new(0, 200, 0, 50)
-                    bb.AlwaysOnTop = true
-                    bb.StudsOffset = Vector3.new(0, 3, 0)
-                    bb.Parent = hrp
-                    local lbl = Instance.new("TextLabel")
-                    lbl.Size = UDim2.new(1, 0, 1, 0)
-                    lbl.BackgroundTransparency = 1
-                    lbl.TextScaled = true
-                    lbl.TextStrokeTransparency = 0
-                    lbl.Parent = bb
+                    local bb = Create("BillboardGui", {Size = UDim2.new(0, 200, 0, 50), AlwaysOnTop = true, StudsOffset = Vector3.new(0, 3, 0), Parent = hrp})
+                    local lbl = Create("TextLabel", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, TextScaled = true, TextStrokeTransparency = 0, Parent = bb})
                     espCache[p] = lbl
                 end
             end
@@ -357,163 +757,164 @@ local function UpdateESP()
 end
 
 RunService.RenderStepped:Connect(function()
-    if Config.ESP_Players then UpdateESP() end
+    if Config.ESP then UpdateESP() end
 end)
 
-VisualTab:CreateParagraph({ Title = "✨ Визуал ♡", Content = "Красота как у фембоя ♡" })
-
-VisualTab:CreateImage({
-    Image = IMAGES.Boykisser1,
-    Size = UDim2.new(0, 300, 0, 200),
-    Position = UDim2.new(0, 0, 0, 0)
-})
-
-VisualTab:CreateToggle({
-    Name = "✨ ESP Игроков (розовое)",
-    CurrentValue = false, Flag = "ESP",
-    Callback = function(v) Config.ESP_Players = v end,
-})
-
-VisualTab:CreateToggle({
-    Name = "☀ Fullbright",
-    CurrentValue = false, Flag = "Fullbright",
-    Callback = function(v)
-        Config.Fullbright = v
-        if v then
-            Lighting.Ambient = Color3.fromRGB(255, 220, 240)
-            Lighting.Brightness = 3
-            Lighting.ClockTime = 12
-            Lighting.FogEnd = 100000
-            Lighting.GlobalShadows = false
-            Lighting.OutdoorAmbient = Color3.fromRGB(255, 220, 240)
-        else
-            Lighting.Ambient = Color3.fromRGB(0, 0, 0)
-            Lighting.Brightness = 1
-            Lighting.ClockTime = 14
-            Lighting.FogEnd = 1000
-            Lighting.GlobalShadows = true
-            Lighting.OutdoorAmbient = Color3.fromRGB(70, 70, 70)
-        end
-    end,
-})
-
 -- ============================================================
--- ДВИЖЕНИЕ
+-- НАПОЛНЕНИЕ ВКЛАДОК
 -- ============================================================
-MovementTab:CreateSlider({
-    Name = "🎀 Скорость ходьбы",
-    Range = {16, 200}, Increment = 1, Suffix = "WS",
-    CurrentValue = 16, Flag = "SpeedValue",
-    Callback = function(v)
-        Config.SpeedValue = v
+local HomeTab     = CreateTab("♡ Главная", ICONS.Heart)
+local FarmTab     = CreateTab("🌸 Фарм", ICONS.Flower)
+local CombatTab   = CreateTab("💖 Бой", ICONS.HeartPulse)
+local VisualTab   = CreateTab("✨ Визуал", ICONS.HeartHandshake)
+local MoveTab     = CreateTab("🎀 Движение", ICONS.Flower2)
+local CreditsTab  = CreateTab("💌 О скрипте", ICONS.CalendarHeart)
+
+-- ГЛАВНАЯ
+CreateParagraph(HomeTab, "♡ Добро пожаловать в Boykisser Hub ♡", "Ооооо, ты любишь целовать мальчиков? Ты бойкиссер! ♡ Уууу, кисс-кисс!")
+CreateImage(HomeTab, "rbxassetid://13220110538", 180)
+CreateButton(HomeTab, "Сказать «Ууу»", function()
+    Notify("♡ Boykisser ♡", "Ууууу~ ты бойкиссер! ♡ Кисс-кисс!", 5)
+end)
+
+-- ФАРМ
+CreateParagraph(FarmTab, "🌸 Авто-фарм", "Собирает монеты за тебя ♡")
+CreateToggle(FarmTab, "Авто-фарм монет", false, function(v)
+    Config.AutoFarm = v
+    if v then StartAutoFarm() else
         local hum = GetHumanoid()
-        if hum then hum.WalkSpeed = v end
-    end,
+        if hum then hum.WalkSpeed = 16 end
+    end
+end, {
+    {Name = "Сбросить скорость", Callback = function() local hum = GetHumanoid() if hum then hum.WalkSpeed = 16 end end},
+    {Name = "Показать статус", Callback = function() Notify("Статус", "AutoFarm: " .. tostring(Config.AutoFarm)) end},
 })
+CreateSlider(FarmTab, "Скорость автофарма", 16, 200, 35, " WS", function(v) Config.AutoFarmSpeed = v end)
 
-MovementTab:CreateToggle({
-    Name = "🎀 Бесконечный прыжок",
-    CurrentValue = false, Flag = "InfJump",
-    Callback = function(v)
-        Config.InfiniteJump = v
-        if v then
-            UserInputService.JumpRequest:Connect(function()
-                if Config.InfiniteJump then
-                    local hum = GetHumanoid()
-                    if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
-                end
-            end)
+-- БОЙ
+CreateImage(CombatTab, "rbxassetid://13220110539", 150)
+CreateToggle(CombatTab, "Silent Aim (в убийцу)", false, function(v) Config.SilentAim = v end, {
+    {Name = "Инфо", Callback = function() Notify("Silent Aim", "Целится автоматически в убийцу") end},
+})
+CreateToggle(CombatTab, "Aimbot (камера)", false, function(v) Config.Aimbot = v end)
+CreateButton(CombatTab, "🗡 Убить всех", function()
+    local m = GetMurderer()
+    if not m then Notify("Ошибка", "Убийца не найден") return end
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character then
+            local thp = p.Character:FindFirstChild("HumanoidRootPart")
+            if thp then
+                hrp.CFrame = thp.CFrame * CFrame.new(0, 0, -2)
+                task.wait(0.05)
+                local tool = char:FindFirstChildOfClass("Tool")
+                if tool then tool:Activate() end
+                task.wait(0.05)
+            end
         end
-    end,
-})
+    end
+    Notify("Kill All", "Готово, кисс-кисс! ♡")
+end)
 
-MovementTab:CreateToggle({
-    Name = "🎀 Noclip (сквозь стены)",
-    CurrentValue = false, Flag = "Noclip",
-    Callback = function(v)
-        Config.Noclip = v
-        if v then
-            task.spawn(function()
-                while Config.Noclip do
-                    local char = LocalPlayer.Character
-                    if char then
-                        for _, part in pairs(char:GetDescendants()) do
-                            if part:IsA("BasePart") then part.CanCollide = false end
-                        end
+-- ВИЗУАЛ
+CreateImage(VisualTab, "rbxassetid://13220110541", 150)
+CreateToggle(VisualTab, "ESP Игроков (розовое)", false, function(v) Config.ESP = v end, {
+    {Name = "Сбросить ESP", Callback = function() for plr, _ in pairs(espCache) do if espCache[plr] then espCache[plr]:Destroy() espCache[plr] = nil end end end},
+})
+CreateToggle(VisualTab, "Fullbright", false, function(v)
+    Config.Fullbright = v
+    if v then
+        Lighting.Ambient = Color3.fromRGB(255, 220, 240)
+        Lighting.Brightness = 3
+        Lighting.ClockTime = 12
+        Lighting.FogEnd = 100000
+        Lighting.GlobalShadows = false
+        Lighting.OutdoorAmbient = Color3.fromRGB(255, 220, 240)
+    else
+        Lighting.Ambient = Color3.fromRGB(0, 0, 0)
+        Lighting.Brightness = 1
+        Lighting.ClockTime = 14
+        Lighting.FogEnd = 1000
+        Lighting.GlobalShadows = true
+        Lighting.OutdoorAmbient = Color3.fromRGB(70, 70, 70)
+    end
+end)
+
+-- ДВИЖЕНИЕ
+CreateSlider(MoveTab, "Скорость ходьбы", 16, 200, 16, " WS", function(v)
+    local hum = GetHumanoid()
+    if hum then hum.WalkSpeed = v end
+end)
+CreateToggle(MoveTab, "Бесконечный прыжок", false, function(v)
+    Config.InfiniteJump = v
+    if v then
+        UserInputService.JumpRequest:Connect(function()
+            if Config.InfiniteJump then
+                local hum = GetHumanoid()
+                if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+            end
+        end)
+    end
+end)
+CreateToggle(MoveTab, "Noclip (сквозь стены)", false, function(v)
+    Config.Noclip = v
+    if v then
+        task.spawn(function()
+            while Config.Noclip do
+                local char = LocalPlayer.Character
+                if char then
+                    for _, part in pairs(char:GetDescendants()) do
+                        if part:IsA("BasePart") then part.CanCollide = false end
                     end
-                    task.wait(0.1)
                 end
-            end)
-        end
-    end,
-})
+                task.wait(0.1)
+            end
+        end)
+    end
+end)
+CreateToggle(MoveTab, "Fly (полёт)", false, function(v)
+    Config.Fly = v
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    if v then
+        local bv = Create("BodyVelocity", {MaxForce = Vector3.new(math.huge, math.huge, math.huge), Velocity = Vector3.zero, Parent = hrp})
+        local bg = Create("BodyGyro", {MaxTorque = Vector3.new(math.huge, math.huge, math.huge), P = 1000, Parent = hrp})
+        task.spawn(function()
+            while Config.Fly do
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                local dir = hum and hum.MoveDirection or Vector3.zero
+                if UserInputService:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0, 1, 0) end
+                bv.Velocity = dir * Config.FlySpeed
+                bg.CFrame = Camera.CFrame
+                task.wait()
+            end
+            bv:Destroy() bg:Destroy()
+        end)
+    else
+        local bv = hrp:FindFirstChildOfClass("BodyVelocity")
+        local bg = hrp:FindFirstChildOfClass("BodyGyro")
+        if bv then bv:Destroy() end
+        if bg then bg:Destroy() end
+    end
+end)
+CreateSlider(MoveTab, "Скорость полёта", 10, 200, 50, "", function(v) Config.FlySpeed = v end)
 
-MovementTab:CreateToggle({
-    Name = "🎀 Fly (полет)",
-    CurrentValue = false, Flag = "Fly",
-    Callback = function(v)
-        Config.Fly = v
-        local char = LocalPlayer.Character
-        if not char then return end
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
-        if v then
-            local bv = Instance.new("BodyVelocity", hrp)
-            bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            bv.Velocity = Vector3.zero
-            local bg = Instance.new("BodyGyro", hrp)
-            bg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-            bg.P = 1000
-            task.spawn(function()
-                while Config.Fly do
-                    local hum = char:FindFirstChildOfClass("Humanoid")
-                    local dir = hum and hum.MoveDirection or Vector3.zero
-                    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-                        dir = dir + Vector3.new(0, 1, 0)
-                    end
-                    bv.Velocity = dir * Config.FlySpeed
-                    bg.CFrame = Camera.CFrame
-                    task.wait()
-                end
-                bv:Destroy(); bg:Destroy()
-            end)
-        else
-            local bv = hrp:FindFirstChildOfClass("BodyVelocity")
-            local bg = hrp:FindFirstChildOfClass("BodyGyro")
-            if bv then bv:Destroy() end
-            if bg then bg:Destroy() end
-        end
-    end,
-})
-
--- ============================================================
 -- О СКРИПТЕ
--- ============================================================
-CreditsTab:CreateImage({
-    Image = IMAGES.Boykisser2,
-    Size = UDim2.new(0, 300, 0, 200),
-    Position = UDim2.new(0, 0, 0, 0)
-})
-
-CreditsTab:CreateParagraph({
-    Title = "💌 ♡ Boykisser Hub ♡",
-    Content = "Иконки: icons.rest (Lucide для Roblox)\nСовместимость: Delta X, Xeno, Arceus, Solara, Wave, Arceus X Neo, Real\n\nСделано с любовью для всех бойкиссеров ♡\nУууу, кисс-кисс! ♡"
-})
-
-CreditsTab:CreateButton({
-    Name = "♡ Уничтожить меню ♡",
-    Callback = function() Rayfield:Destroy() end,
-})
+CreateImage(CreditsTab, "rbxassetid://13220110538", 150)
+CreateParagraph(CreditsTab, "💌 ♡ Boykisser Hub ♡", "Кастомный UI в стиле Pulse Hub\nИсполнитель: " .. executorName .. "\n\nСделано с любовью для бойкиссеров ♡")
+CreateButton(CreditsTab, "Уничтожить меню", function()
+    ScreenGui:Destroy()
+end)
 
 -- ============================================================
--- УВЕДОМЛЕНИЕ О ЗАГРУЗКЕ + АНТИ-АФК
+-- СТАРТ
 -- ============================================================
-Rayfield:Notify({
-    Title = "♡ Boykisser Hub ♡",
-    Content = "Уууу, загружено! Ты бойкиссер! ♡",
-    Duration = 5,
-    Image = ICONS.Heart,
-})
+Notify("♡ Boykisser Hub ♡", "Загружено! Ты бойкиссер! ♡", 5)
 
 LocalPlayer.Idled:Connect(function()
     local vu = game:GetService("VirtualUser")
